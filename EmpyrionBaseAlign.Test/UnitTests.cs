@@ -12,7 +12,7 @@ namespace EmpyrionBaseAlign.Test
         {
             var M = new IdPositionRotation() { id = 1, pos = new PVector3(), rot = new PVector3() };
             var A = new IdPositionRotation() { id = 1, pos = new PVector3(), rot = new PVector3() };
-            var R = EmpyrionBaseAlign.ExecAlign(M, A);
+            var R = EmpyrionBaseAlign.ExecAlign(M, A, Vector3.Zero);
             Assert.AreEqual(0, R.pos.x);
             Assert.AreEqual(0, R.pos.y);
             Assert.AreEqual(0, R.pos.z);
@@ -27,7 +27,7 @@ namespace EmpyrionBaseAlign.Test
         {
             var M = new IdPositionRotation() { id = 1, pos = new PVector3(),         rot = new PVector3() };
             var A = new IdPositionRotation() { id = 1, pos = new PVector3(20,20,20), rot = new PVector3() };
-            var R = EmpyrionBaseAlign.ExecAlign(M, A);
+            var R = EmpyrionBaseAlign.ExecAlign(M, A, Vector3.Zero);
             Assert.AreEqual(20, R.pos.x);
             Assert.AreEqual(20, R.pos.y);
             Assert.AreEqual(20, R.pos.z);
@@ -42,7 +42,7 @@ namespace EmpyrionBaseAlign.Test
         {
             var M = new IdPositionRotation() { id = 1, pos = new PVector3(),           rot = new PVector3(45,0,0) };
             var A = new IdPositionRotation() { id = 1, pos = new PVector3(20, 20, 20), rot = new PVector3() };
-            var R = EmpyrionBaseAlign.ExecAlign(M, A);
+            var R = EmpyrionBaseAlign.ExecAlign(M, A, Vector3.Zero);
             Assert.AreEqual(19.799, Math.Round(R.pos.x, 3));
             Assert.AreEqual(19.799, Math.Round(R.pos.y, 3));
             Assert.AreEqual(20    , Math.Round(R.pos.z, 3));
@@ -58,8 +58,8 @@ namespace EmpyrionBaseAlign.Test
             var M = new IdPositionRotation() { id = 1, pos = new PVector3(), rot = new PVector3(45, 0, 0) };
             var A = new IdPositionRotation() { id = 1, pos = new PVector3(20, 20, 20), rot = new PVector3() };
 
-            var R = EmpyrionBaseAlign.ExecAlign(M, A);
-                R = EmpyrionBaseAlign.ExecAlign(M, R);
+            var R = EmpyrionBaseAlign.ExecAlign(M, A, Vector3.Zero);
+                R = EmpyrionBaseAlign.ExecAlign(M, R, Vector3.Zero);
 
             Assert.AreEqual(19.799, Math.Round(R.pos.x, 3));
             Assert.AreEqual(19.799, Math.Round(R.pos.y, 3));
@@ -75,7 +75,7 @@ namespace EmpyrionBaseAlign.Test
         {
             var M = new IdPositionRotation() { id = 1, pos = new PVector3(), rot = new PVector3(0, 45, 0) };
             var A = new IdPositionRotation() { id = 1, pos = new PVector3(20, 20, 20), rot = new PVector3() };
-            var R = EmpyrionBaseAlign.ExecAlign(M, A);
+            var R = EmpyrionBaseAlign.ExecAlign(M, A, Vector3.Zero);
             Assert.AreEqual(19.799, Math.Round(R.pos.x, 3));
             Assert.AreEqual(20,     Math.Round(R.pos.y, 3));
             Assert.AreEqual(19.799, Math.Round(R.pos.z, 3));
@@ -91,8 +91,8 @@ namespace EmpyrionBaseAlign.Test
             var M = new IdPositionRotation() { id = 1, pos = new PVector3(), rot = new PVector3(0, 45, 0) };
             var A = new IdPositionRotation() { id = 1, pos = new PVector3(20, 20, 20), rot = new PVector3() };
 
-            var R = EmpyrionBaseAlign.ExecAlign(M, A);
-                R = EmpyrionBaseAlign.ExecAlign(M, R);
+            var R = EmpyrionBaseAlign.ExecAlign(M, A, Vector3.Zero);
+                R = EmpyrionBaseAlign.ExecAlign(M, R, Vector3.Zero);
 
             Assert.AreEqual(19.799, Math.Round(R.pos.x, 3));
             Assert.AreEqual(20,     Math.Round(R.pos.y, 3));
@@ -108,7 +108,7 @@ namespace EmpyrionBaseAlign.Test
         {
             var M = new IdPositionRotation() { id = 1, pos = new PVector3(), rot = new PVector3(0, 0, 45) };
             var A = new IdPositionRotation() { id = 1, pos = new PVector3(20, 20, 20), rot = new PVector3() };
-            var R = EmpyrionBaseAlign.ExecAlign(M, A);
+            var R = EmpyrionBaseAlign.ExecAlign(M, A, Vector3.Zero);
             Assert.AreEqual( 20,     Math.Round(R.pos.x, 3));
             Assert.AreEqual( 19.799, Math.Round(R.pos.y, 3));
             Assert.AreEqual( 19.799, Math.Round(R.pos.z, 3));
@@ -124,8 +124,8 @@ namespace EmpyrionBaseAlign.Test
             var M = new IdPositionRotation() { id = 1, pos = new PVector3(), rot = new PVector3(0, 0, 45) };
             var A = new IdPositionRotation() { id = 1, pos = new PVector3(20, 20, 20), rot = new PVector3() };
 
-            var R = EmpyrionBaseAlign.ExecAlign(M, A);
-                R = EmpyrionBaseAlign.ExecAlign(M, R);
+            var R = EmpyrionBaseAlign.ExecAlign(M, A, Vector3.Zero);
+                R = EmpyrionBaseAlign.ExecAlign(M, R, Vector3.Zero);
 
             Assert.AreEqual(20,     Math.Round(R.pos.x, 3));
             Assert.AreEqual(19.799, Math.Round(R.pos.y, 3));
@@ -141,7 +141,7 @@ namespace EmpyrionBaseAlign.Test
         {
             var M = new IdPositionRotation() { id = 1, pos = new PVector3(), rot = new PVector3(45, 45, 45) };
             var A = new IdPositionRotation() { id = 1, pos = new PVector3(20, 20, 20), rot = new PVector3() };
-            var R = EmpyrionBaseAlign.ExecAlign(M, A);
+            var R = EmpyrionBaseAlign.ExecAlign(M, A, Vector3.Zero);
             Assert.AreEqual(19.971, Math.Round(R.pos.x, 3));
             Assert.AreEqual(19.757, Math.Round(R.pos.y, 3));
             Assert.AreEqual(19.971, Math.Round(R.pos.z, 3));
@@ -157,8 +157,8 @@ namespace EmpyrionBaseAlign.Test
             var M = new IdPositionRotation() { id = 1, pos = new PVector3(), rot = new PVector3(45, 45, 45) };
             var A = new IdPositionRotation() { id = 1, pos = new PVector3(20, 20, 20), rot = new PVector3() };
 
-            var R = EmpyrionBaseAlign.ExecAlign(M, A);
-                R = EmpyrionBaseAlign.ExecAlign(M, R);
+            var R = EmpyrionBaseAlign.ExecAlign(M, A, Vector3.Zero);
+                R = EmpyrionBaseAlign.ExecAlign(M, R, Vector3.Zero);
 
             Assert.AreEqual(19.971, Math.Round(R.pos.x, 3));
             Assert.AreEqual(19.757, Math.Round(R.pos.y, 3));
