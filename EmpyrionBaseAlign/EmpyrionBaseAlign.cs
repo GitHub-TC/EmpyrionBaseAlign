@@ -130,8 +130,8 @@ namespace EmpyrionBaseAlign
             var posHomeBase  = GetVector3(aMainBase.pos);
             var posAlignBase = GetVector3(aBaseToAlign.pos);
 
-            var posHomeBaseRot     = GetMatrix4x4Neg(aMainBase.rot);
-            var posHomeBaseRotBack = GetMatrix4x4   (aMainBase.rot);
+            var posHomeBaseRotBack = GetMatrix4x4(aMainBase.rot);
+            var posHomeBaseRot     = posHomeBaseRotBack.Transposition();
 
             var posNormAlignBaseTrans = posAlignBase - posHomeBase;
             var posNormAlignBaseRot = Vector3.Transform(posNormAlignBaseTrans, posHomeBaseRot);

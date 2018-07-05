@@ -62,7 +62,6 @@
   <ItemGroup>
     <None Include="ILMerge.props" />
     <None Include="packages.config" />
-    <None Include="README.md" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="ILMergeOrder.txt" />
