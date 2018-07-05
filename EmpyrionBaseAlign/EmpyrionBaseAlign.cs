@@ -36,10 +36,12 @@ namespace EmpyrionBaseAlign
 
             if (MainBase == null || BaseToAlign == null) return;
 
-            ExecAlign(MainBase, BaseToAlign);
+            this.log($"**HandleEmpyrionBaseAlign:ExecAlign {MainBase.id} pos= {MainBase.pos.x},{MainBase.pos.y},{MainBase.pos.z} rot= {MainBase.rot.x},{MainBase.rot.y},{MainBase.rot.z} Align: {BaseToAlign.id} pos= {BaseToAlign.pos.x},{BaseToAlign.pos.y},{BaseToAlign.pos.z} rot= {BaseToAlign.rot.x},{BaseToAlign.rot.y},{BaseToAlign.rot.z}");
+            var AlignResult = ExecAlign(MainBase, BaseToAlign);
 
-            this.log($"**HandleEmpyrionBaseAlign:Align {BaseToAlign.id} pos= {BaseToAlign.pos.x},{BaseToAlign.pos.y},{BaseToAlign.pos.z} rot= {BaseToAlign.rot.x},{BaseToAlign.rot.y},{BaseToAlign.rot.z}");
-            GameAPI.Game_Request(CmdId.Request_Entity_Teleport, 1, BaseToAlign);
+            this.log($"**HandleEmpyrionBaseAlign:Align setposition {BaseToAlign.id} {BaseToAlign.pos.x},{BaseToAlign.pos.y},{BaseToAlign.pos.z} setrotation {BaseToAlign.id} {BaseToAlign.rot.x},{BaseToAlign.rot.y},{BaseToAlign.rot.z} -> \n" +
+                     $"setposition {BaseToAlign.id} {AlignResult.pos.x},{AlignResult.pos.y},{AlignResult.pos.z} setrotation {BaseToAlign.id} {AlignResult.rot.x},{AlignResult.rot.y},{AlignResult.rot.z}");
+            GameAPI.Game_Request(CmdId.Request_Entity_Teleport, 1, AlignResult);
         }
 
         enum ChatType
@@ -103,25 +105,28 @@ namespace EmpyrionBaseAlign
             GameAPI.Game_Request(CmdId.Request_Entity_PosAndRot, 1, new Eleon.Modding.Id(aId));
         }
 
-        private Vector3 GetVector3(PVector3 aVector)
+        public static Vector3 GetVector3(PVector3 aVector)
         {
             return new Vector3(aVector.x, aVector.y, aVector.z);
         }
 
-        private Matrix4x4 GetMatrix4x4(PVector3 aVector)
+        public static PVector3 GetVector3(Vector3 aVector)
         {
-            return Matrix4x4.CreateFromYawPitchRoll(aVector.x, aVector.y, aVector.z);
+            return new PVector3(aVector.X, aVector.Y, aVector.Z);
         }
 
-        private Matrix4x4 GetMatrix4x4Neg(PVector3 aVector)
+        public static Matrix4x4 GetMatrix4x4(PVector3 aVector)
         {
-            return Matrix4x4.CreateFromYawPitchRoll(-aVector.x, -aVector.y, -aVector.z);
+            return Matrix4x4.CreateFromYawPitchRoll(aVector.y * (float)(Math.PI / 180), aVector.z * (float)(Math.PI / 180), aVector.x * (float)(Math.PI / 180));
         }
 
-        private void ExecAlign(IdPositionRotation aMainBase, IdPositionRotation aBaseToAlign)
+        public static Matrix4x4 GetMatrix4x4Neg(PVector3 aVector)
         {
-            this.log($"**HandleEmpyrionBaseAlign:ExecAlign {aMainBase.id} pos= {aMainBase.pos.x},{aMainBase.pos.y},{aMainBase.pos.z} rot= {aMainBase.rot.x},{aMainBase.rot.y},{aMainBase.rot.z} Align: {aBaseToAlign.id} pos= {aBaseToAlign.pos.x},{aBaseToAlign.pos.y},{aBaseToAlign.pos.z} rot= {aBaseToAlign.rot.x},{aBaseToAlign.rot.y},{aBaseToAlign.rot.z}");
+            return Matrix4x4.CreateFromYawPitchRoll(-aVector.y * (float)(Math.PI / 180), -aVector.z * (float)(Math.PI / 180), -aVector.x * (float)(Math.PI / 180));
+        }
 
+        public static IdPositionRotation ExecAlign(IdPositionRotation aMainBase, IdPositionRotation aBaseToAlign)
+        {
             var posHomeBase  = GetVector3(aMainBase.pos);
             var posAlignBase = GetVector3(aBaseToAlign.pos);
 
@@ -130,19 +135,13 @@ namespace EmpyrionBaseAlign
 
             var posNormAlignBaseTrans = posAlignBase - posHomeBase;
             var posNormAlignBaseRot = Vector3.Transform(posNormAlignBaseTrans, posHomeBaseRot);
-            posNormAlignBaseRot = new Vector3((int)(posNormAlignBaseRot.X + 1) / 2 * 2, 
-                                              (int)(posNormAlignBaseRot.Y + 1) / 2 * 2, 
-                                              (int)(posNormAlignBaseRot.Z + 1) / 2 * 2);
+            posNormAlignBaseRot = new Vector3(((int)Math.Round(posNormAlignBaseRot.X + 1)) / 2 * 2, 
+                                              ((int)Math.Round(posNormAlignBaseRot.Y + 1)) / 2 * 2, 
+                                              ((int)Math.Round(posNormAlignBaseRot.Z + 1)) / 2 * 2);
             var posNormAlignBaseRotBack = Vector3.Transform(posNormAlignBaseRot, posHomeBaseRotBack);
             var posNormAlignBaseRotBackTans = posNormAlignBaseRotBack + posHomeBase;
 
-            aBaseToAlign.pos.x = posNormAlignBaseRotBackTans.X;
-            aBaseToAlign.pos.y = posNormAlignBaseRotBackTans.Y;
-            aBaseToAlign.pos.z = posNormAlignBaseRotBackTans.Z;
-
-            aBaseToAlign.rot.x = aMainBase.rot.x;
-            aBaseToAlign.rot.y = aMainBase.rot.y;
-            aBaseToAlign.rot.z = aMainBase.rot.z;
+            return new IdPositionRotation() { id = aBaseToAlign.id, pos = GetVector3(posNormAlignBaseRotBackTans), rot = aMainBase.rot };
         }
 
 
