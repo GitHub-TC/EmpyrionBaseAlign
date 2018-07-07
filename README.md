@@ -14,12 +14,12 @@ Damit werden viele Exploids vermieden die sich sonst ergeben würden. Spieler mit
 
 #### Help
 
-`/al` : Zeigt die Kommandos der Mod an
+* /al : Zeigt die Kommandos der Mod an
 
 #### Align
 
-`/al {BaseToAlignId} {MainBaseId}`
-`/al {BaseToAlignId} {MainBaseId} {ShiftX},{ShiftY},{ShiftZ}`
+* /al {BaseToAlignId} {MainBaseId}
+* /al {BaseToAlignId} {MainBaseId} {ShiftX},{ShiftY},{ShiftZ}
 
 Richtet die Basis (BaseToAlignId) so aus und positioniert sie das sie im Rastermaß einer bestehenden Basis (MainBaseId) liegt und beim Bauen nahtlos an diese anschließt.
 
