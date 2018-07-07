@@ -51,35 +51,48 @@ namespace EmpyrionBaseAlign
 
         enum ChatType
         {
-            Faction = 3,
-            Global = 5,
+            Global  = 3,
+            Faction = 5,
         }
 
         private void ExecAlignCommand(ChatInfo info, Dictionary<string, string> args)
         {
             this.log($"**HandleEmpyrionBaseAlign {info.type}:{info.msg} {args.Aggregate("", (s, i) => s + i.Key + "/" + i.Value + " ")}");
 
-            if (info.type == (byte)ChatType.Faction) return;
-            if(args.Count < 2) { DisplayHelp(info); return; }
+            if (info.type != (byte)ChatType.Faction) return;
+            if (args.Count < 2) { DisplayHelp(info); return; }
 
             BaseToAlignId = getIntParam(args, "BaseToAlignId");
-            MainBaseId    = getIntParam(args, "MainBaseId");
+            MainBaseId = getIntParam(args, "MainBaseId");
 
             ShiftVector = new Vector3(getIntParam(args, "ShiftX"), getIntParam(args, "ShiftY"), getIntParam(args, "ShiftZ"));
 
-            MainBase    = BaseToAlign = null;
+            MainBase = BaseToAlign = null;
             WithinAlign = false;
 
+            CheckPlayerPermissionThenExecAlign(info);
+        }
+
+        private void CheckPlayerPermissionThenExecAlign(ChatInfo info)
+        {
             this.Request_Player_Info(info.playerId.ToId(), (I) =>
             {
                 var playerPermissionLevel = (PermissionType)I.permission;
 
-                if (playerPermissionLevel > PermissionType.Player)
-                {
-                    GetEntity_PosAndRot(BaseToAlignId);
-                    GetEntity_PosAndRot(MainBaseId);
-                }
+                if (playerPermissionLevel > PermissionType.Player) GetPosAndRotThenExecAlign();
+                else
+                    this.Request_Structure_BlockStatistics(new Id(BaseToAlignId), O =>
+                    {
+                        if (O.blockStatistics.Aggregate(0, (s, i) => s + i.Value) > 10) this.log($"**HandleEmpyrionBaseAlign {info.type}:{info.msg} {O.blockStatistics.Aggregate("", (s, i) => s + i.Key + "/" + i.Value + " ")} -> zu viele Blöcke");
+                        else                                                            GetPosAndRotThenExecAlign();
+                    });
             });
+        }
+
+        private void GetPosAndRotThenExecAlign()
+        {
+            GetEntity_PosAndRot(BaseToAlignId);
+            GetEntity_PosAndRot(MainBaseId);
         }
 
         private int getIntParam(Dictionary<string, string> aArgs, string aParameterName)
@@ -118,7 +131,7 @@ namespace EmpyrionBaseAlign
 
         private void GetEntity_PosAndRot(int aId)
         {
-            GameAPI.Game_Request(CmdId.Request_Entity_PosAndRot, 1, new Eleon.Modding.Id(aId));
+            GameAPI.Game_Request(CmdId.Request_Entity_PosAndRot, 1, new Id(aId));
         }
 
         public static Vector3 GetVector3(PVector3 aVector)

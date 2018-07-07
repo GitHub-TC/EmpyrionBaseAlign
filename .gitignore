@@ -3,7 +3,9 @@
 
 # build
 [Oo]bj/
-[Bb]in/
+[Bb]in/*
+![Bb]in/EmpyrionBaseAlign.dll
+[Dd]ebug/
 packages/
 TestResults/
 
@@ -39,3 +41,5 @@ Thumbs.db
 
 # dotCover
 *.dotCover
+*.pdb
+
