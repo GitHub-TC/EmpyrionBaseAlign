@@ -18,6 +18,8 @@ namespace EmpyrionBaseAlign
         public IdPositionRotation MainBase { get; private set; }
         public bool WithinAlign { get; private set; }
 
+        public Dictionary<int, IdPositionRotation> OriginalPosRot { get; set; } = new Dictionary<int, IdPositionRotation>();
+
         public override void Initialize(ModGameAPI aGameAPI)
         {
             GameAPI = aGameAPI;
@@ -28,6 +30,7 @@ namespace EmpyrionBaseAlign
             Event_Entity_PosAndRot += EmpyrionBaseAlign_Event_Entity_PosAndRot;
 
             this.ChatCommands.Add(new ChatCommand(@"/al", ExecAlignCommand, "Hilfe"));
+            this.ChatCommands.Add(new ChatCommand(@"/al:undo (?<BaseToAlignId>\d+)", ExecAlignCommand, "UNDO: Basis {BaseToAlignId} ausrichten"));
             this.ChatCommands.Add(new ChatCommand(@"/al (?<BaseToAlignId>\d+) (?<MainBaseId>\d+) (?<ShiftX>.+),(?<ShiftY>.+),(?<ShiftZ>.+)", ExecAlignCommand, "Basis {BaseToAlignId} an Basis {MainBaseId} ausrichten und um {ShiftX},{ShiftY},{ShiftZ} verschieben"));
             this.ChatCommands.Add(new ChatCommand(@"/al (?<BaseToAlignId>\d+) (?<MainBaseId>\d+)", ExecAlignCommand, "Basis {BaseToAlignId} an Basis {MainBaseId} ausrichten"));
         }
@@ -37,13 +40,20 @@ namespace EmpyrionBaseAlign
             if (aData.id == MainBaseId   ) MainBase    = aData;
             if (aData.id == BaseToAlignId) BaseToAlign = aData;
 
-            if (MainBase == null || BaseToAlign == null || WithinAlign) return;
+            if ((MainBase == null && MainBaseId != 0) || BaseToAlign == null || WithinAlign) return;
             WithinAlign = true;
 
-            this.log($"**HandleEmpyrionBaseAlign:ExecAlign {MainBase.id} pos= {MainBase.pos.x},{MainBase.pos.y},{MainBase.pos.z} rot= {MainBase.rot.x},{MainBase.rot.y},{MainBase.rot.z} Align: {BaseToAlign.id} pos= {BaseToAlign.pos.x},{BaseToAlign.pos.y},{BaseToAlign.pos.z} rot= {BaseToAlign.rot.x},{BaseToAlign.rot.y},{BaseToAlign.rot.z} Shift={ShiftVector.X},{ShiftVector.Y},{ShiftVector.Z}");
-            var AlignResult = ExecAlign(MainBase, BaseToAlign, ShiftVector);
+            if (!OriginalPosRot.ContainsKey(BaseToAlign.id)) OriginalPosRot.Add(BaseToAlign.id, BaseToAlign);
 
-            this.log($"**HandleEmpyrionBaseAlign:Align setposition {BaseToAlign.id} {BaseToAlign.pos.x},{BaseToAlign.pos.y},{BaseToAlign.pos.z} setrotation {BaseToAlign.id} {BaseToAlign.rot.x},{BaseToAlign.rot.y},{BaseToAlign.rot.z} -> \n" +
+            var AlignResult = BaseToAlign = OriginalPosRot[BaseToAlign.id];
+            
+            if (MainBaseId != 0)
+            {
+                this.log($"**HandleEmpyrionBaseAlign:ExecAlign {MainBase.id} pos= {MainBase.pos.x},{MainBase.pos.y},{MainBase.pos.z} rot= {MainBase.rot.x},{MainBase.rot.y},{MainBase.rot.z} Align: {BaseToAlign.id} pos= {BaseToAlign.pos.x},{BaseToAlign.pos.y},{BaseToAlign.pos.z} rot= {BaseToAlign.rot.x},{BaseToAlign.rot.y},{BaseToAlign.rot.z} Shift={ShiftVector.X},{ShiftVector.Y},{ShiftVector.Z}");
+                AlignResult = ExecAlign(MainBase, BaseToAlign, ShiftVector);
+            }
+
+            this.log($"**HandleEmpyrionBaseAlign:Align {(MainBaseId == 0 ? "UNDO" : "")} setposition {BaseToAlign.id} {BaseToAlign.pos.x},{BaseToAlign.pos.y},{BaseToAlign.pos.z} setrotation {BaseToAlign.id} {BaseToAlign.rot.x},{BaseToAlign.rot.y},{BaseToAlign.rot.z} -> \n" +
                      $"setposition {BaseToAlign.id} {AlignResult.pos.x},{AlignResult.pos.y},{AlignResult.pos.z} setrotation {BaseToAlign.id} {AlignResult.rot.x},{AlignResult.rot.y},{AlignResult.rot.z}");
             GameAPI.Game_Request(CmdId.Request_Entity_Teleport, 1, AlignResult);
             WithinAlign = false;
@@ -63,7 +73,7 @@ namespace EmpyrionBaseAlign
             if (args.Count < 2) { DisplayHelp(info); return; }
 
             BaseToAlignId = getIntParam(args, "BaseToAlignId");
-            MainBaseId = getIntParam(args, "MainBaseId");
+            MainBaseId    = getIntParam(args, "MainBaseId");
 
             ShiftVector = new Vector3(getIntParam(args, "ShiftX"), getIntParam(args, "ShiftY"), getIntParam(args, "ShiftZ"));
 
@@ -92,7 +102,7 @@ namespace EmpyrionBaseAlign
         private void GetPosAndRotThenExecAlign()
         {
             GetEntity_PosAndRot(BaseToAlignId);
-            GetEntity_PosAndRot(MainBaseId);
+            if(MainBaseId != 0) GetEntity_PosAndRot(MainBaseId);
         }
 
         private int getIntParam(Dictionary<string, string> aArgs, string aParameterName)

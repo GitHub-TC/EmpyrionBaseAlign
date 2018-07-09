@@ -20,10 +20,13 @@ Damit werden viele Exploids vermieden die sich sonst ergeben würden. Spieler mit
 
 * /al {BaseToAlignId} {MainBaseId}
 * /al {BaseToAlignId} {MainBaseId} {ShiftX},{ShiftY},{ShiftZ}
+* /al {BaseToAlignId} 0
 
 Richtet die Basis (BaseToAlignId) so aus und positioniert sie das sie im Rastermaß einer bestehenden Basis (MainBaseId) liegt und beim Bauen nahtlos an diese anschließt.
 
 Mit dem {ShiftXYZ} kann noch eine Verschiebung wärend der Ausrichtung angegeben werden um die auszurichtene Basis im neuen Rastermaß zu verschieben.
+
+UNDO: Wenn die {MainBaseId} = 0 ist wird die Basis {BaseToAlignId} wieder an die ursprüngliche Position und Ausrichtung zurückgesetzt werden.
 
 ### Restore?
 Im Logfile werden die 'setposition' und 'setrotation' Kommandos hinterlegt die zur Restaurierung der 'alten' Position und Ausrichtung genutzt werden können
