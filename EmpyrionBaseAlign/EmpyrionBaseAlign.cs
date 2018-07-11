@@ -56,7 +56,7 @@ namespace EmpyrionBaseAlign
 
         private void EmpyrionBaseAlign_Event_Entity_PosAndRot(IdPositionRotation aData)
         {
-            if (aData.id == CurrentAlignData.MainBaseId) MainBase    = aData;
+            if (aData.id == CurrentAlignData.MainBaseId   ) MainBase    = aData;
             if (aData.id == CurrentAlignData.BaseToAlignId) BaseToAlign = aData;
 
             if ((MainBase == null && CurrentAlignData.MainBaseId != 0) || BaseToAlign == null || WithinAlign) return;
@@ -100,6 +100,8 @@ namespace EmpyrionBaseAlign
                 case SubCommand.Help  : DisplayHelp(info); return;
                 case SubCommand.Align : CurrentAlignData.BaseToAlignId = getIntParam(args, "BaseToAlignId");
                                         CurrentAlignData.MainBaseId    = getIntParam(args, "MainBaseId");
+                                        CurrentAlignData.ShiftVector   = Vector3.Zero;
+                                        CurrentAlignData.RotateVector  = Vector3.Zero;
                                         break;
                 case SubCommand.Shift : CurrentAlignData.ShiftVector  += new Vector3(getIntParam(args, "ShiftX"), getIntParam(args, "ShiftY"), getIntParam(args, "ShiftZ"));
                                         break;
