@@ -19,12 +19,13 @@ Damit werden viele Exploids vermieden die sich sonst ergeben würden. Spieler mit
 #### Align
 
 * /al {BaseToAlignId} {MainBaseId}
-* /al {BaseToAlignId} {MainBaseId} {ShiftX},{ShiftY},{ShiftZ}
+* /al {BaseToAlignId} {MainBaseId}
 * /al {BaseToAlignId} 0
 
-Richtet die Basis (BaseToAlignId) so aus und positioniert sie das sie im Rastermaß einer bestehenden Basis (MainBaseId) liegt und beim Bauen nahtlos an diese anschließt.
+* /als {ShiftX},{ShiftY},{ShiftZ}		=> Letzte /al Basis um XYZ verschieben
+* /alr {RotateX},{RotateY},{RotateZ}    => Letzte /al Basis um XYZ drehen
 
-Mit dem {ShiftXYZ} kann noch eine Verschiebung wärend der Ausrichtung angegeben werden um die auszurichtene Basis im neuen Rastermaß zu verschieben.
+Richtet die Basis (BaseToAlignId) so aus und positioniert sie das sie im Rastermaß einer bestehenden Basis (MainBaseId) liegt und beim Bauen nahtlos an diese anschließt.
 
 UNDO: Wenn die {MainBaseId} = 0 ist wird die Basis {BaseToAlignId} wieder an die ursprüngliche Position und Ausrichtung zurückgesetzt werden.
 
