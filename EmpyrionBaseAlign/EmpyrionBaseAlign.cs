@@ -5,9 +5,27 @@ using System.Collections.Generic;
 using EmpyrionAPIDefinitions;
 using System.Linq;
 using System.Numerics;
+using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace EmpyrionBaseAlign
 {
+    public static class Extensions
+    {
+        public static T GetAttribute<T>(this Assembly aAssembly)
+        {
+            return aAssembly.GetCustomAttributes(typeof(T), false).OfType<T>().FirstOrDefault();
+        }
+
+        static Regex GetCommand = new Regex(@"(?<cmd>(\w|\/|\s)+)");
+
+        public static string MsgString(this ChatCommand aCommand)
+        {
+            var CmdString = GetCommand.Match(aCommand.invocationPattern).Groups["cmd"]?.Value ?? aCommand.invocationPattern;
+            return $"[c][ff00ff]{CmdString}[-][/c]{aCommand.paramNames.Aggregate(" ", (S, P) => S + $"<[c][00ff00]{P}[-][/c]> ")}: {aCommand.description}";
+        }
+
+    }
     public partial class EmpyrionBaseAlign : SimpleMod
     {
         public ModGameAPI GameAPI { get; set; }
@@ -102,7 +120,7 @@ namespace EmpyrionBaseAlign
 
             switch (aSubCommand)
             {
-                case SubCommand.Help  : DisplayHelp(info); return;
+                case SubCommand.Help  : DisplayHelp(info.playerId); return;
                 case SubCommand.Align : CurrentAlignData.BaseToAlignId = getIntParam(args, "BaseToAlignId");
                                         CurrentAlignData.MainBaseId    = getIntParam(args, "MainBaseId");
                                         CurrentAlignData.ShiftVector   = Vector3.Zero;
@@ -126,7 +144,7 @@ namespace EmpyrionBaseAlign
             {
                 Request_Player_Info(info.playerId.ToId(), (I) =>
                 {
-                    var playerPermissionLevel = I.permission;
+                    var playerPermissionLevel = (PermissionType)I.permission;
 
                     if (playerPermissionLevel >= ConfigurationManager.CurrentConfiguration.FreePermissionLevel) GetPosAndRotThenExecAlign();
                     else if(ConfigurationManager.CurrentConfiguration.ForbiddenPlayfields.Contains(I.playfield)) InformPlayer(info.playerId, $"BaseAlign: Playfield ist verboten");
@@ -168,25 +186,26 @@ namespace EmpyrionBaseAlign
             return value;
         }
 
-        private void DisplayHelp(ChatInfo info)
+        void ShowDialog(int aPlayerId, PlayerInfo aPlayer, string aTitle, string aMessage)
         {
-            Request_Player_Info(info.playerId.ToId(), (I) =>
+            Request_ShowDialog_SinglePlayer(new DialogBoxData()
             {
-                var playerPermissionLevel = (PermissionType)I.permission;
-                var header = $"Befehle für {I.playerName} mit den Rechten {playerPermissionLevel}\n";
+                Id = aPlayerId,
+                MsgText = $"{aTitle}: [c][ffffff]{aPlayer.playerName}[-][/c] with permission [c][ffffff]{(PermissionType)aPlayer.permission}[-][/c]\n" + aMessage,
+            });
+        }
 
-                var lines = GetChatCommandsForPermissionLevel(playerPermissionLevel)
-          .Select(x => x.ToString())
-          .OrderBy(x => x.Length).ToList();
+        private void DisplayHelp(int aPlayerId)
+        {
+            Request_Player_Info(aPlayerId.ToId(), (P) =>
+            {
+                var CurrentAssembly = Assembly.GetAssembly(this.GetType());
+                //[c][hexid][-][/c]    [c][019245]test[-][/c].
 
-                lines.Insert(0, header);
-
-                var msg = new DialogBoxData()
-                {
-                    Id = info.playerId,
-                    MsgText = String.Join("\n", lines.ToArray())
-                };
-                Request_ShowDialog_SinglePlayer(msg);
+                ShowDialog(aPlayerId, P, "Commands",
+                    "\n" + String.Join("\n", GetChatCommandsForPermissionLevel((PermissionType)P.permission).Select(C => C.MsgString()).ToArray()) +
+                    $"\n\n[c][c0c0c0]{CurrentAssembly.GetAttribute<AssemblyTitleAttribute>()?.Title} by {CurrentAssembly.GetAttribute<AssemblyCompanyAttribute>()?.Company} Version:{CurrentAssembly.GetAttribute<AssemblyFileVersionAttribute>()?.Version}[-][/c]"
+                    );
             });
         }
 

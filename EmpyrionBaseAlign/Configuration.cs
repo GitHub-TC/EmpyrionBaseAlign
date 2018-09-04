@@ -11,7 +11,7 @@ namespace EmpyrionBaseAlign
 {
     public class Configuration
     {
-        public int FreePermissionLevel { get; set; } = (int)PermissionType.Moderator;
+        public PermissionType FreePermissionLevel { get; set; } = PermissionType.Moderator;
         public string[] ForbiddenPlayfields { get; set; } = new string[] { "" };
     }
 
