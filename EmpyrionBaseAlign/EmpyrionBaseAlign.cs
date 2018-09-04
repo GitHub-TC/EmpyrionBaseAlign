@@ -17,6 +17,8 @@ namespace EmpyrionBaseAlign
 
         public Dictionary<int, IdPositionRotation> OriginalPosRot { get; set; } = new Dictionary<int, IdPositionRotation>();
 
+        public ConfigurationManager ConfigurationManager { get; set; }
+
         class LastAlignData
         {
             public int PlayerId;
@@ -41,17 +43,20 @@ namespace EmpyrionBaseAlign
         public override void Initialize(ModGameAPI aGameAPI)
         {
             GameAPI = aGameAPI;
-            this.verbose = true;
+            verbose = true;
+            LogLevel = LogLevel.Message;
+            ConfigurationManager.Logger = log;
+            ConfigurationManager = new ConfigurationManager();
 
-            this.log($"**HandleEmpyrionBaseAlign loaded");
+            log($"**HandleEmpyrionBaseAlign loaded", LogLevel.Message);
 
             Event_Entity_PosAndRot += EmpyrionBaseAlign_Event_Entity_PosAndRot;
 
-            this.ChatCommands.Add(new ChatCommand(@"/al", (C, A) => ExecAlignCommand(SubCommand.Help, C, A), "Hilfe anzeigen"));
-            this.ChatCommands.Add(new ChatCommand(@"/al (?<BaseToAlignId>\d+) (?<MainBaseId>\d+)",   (C, A) => ExecAlignCommand(SubCommand.Align, C, A), "Basis {BaseToAlignId} an Basis {MainBaseId} ausrichten"));
+            ChatCommands.Add(new ChatCommand(@"/al", (C, A) => ExecAlignCommand(SubCommand.Help, C, A), "Hilfe anzeigen"));
+            ChatCommands.Add(new ChatCommand(@"/al (?<BaseToAlignId>\d+) (?<MainBaseId>\d+)",   (C, A) => ExecAlignCommand(SubCommand.Align, C, A), "Basis {BaseToAlignId} an Basis {MainBaseId} ausrichten"));
 
-            this.ChatCommands.Add(new ChatCommand(@"/als (?<ShiftX>.+),(?<ShiftY>.+),(?<ShiftZ>.+)", (C, A) => ExecAlignCommand(SubCommand.Shift, C, A), "Letzte /al {BaseToAlignId} um {ShiftX},{ShiftY},{ShiftZ} verschieben"));
-            this.ChatCommands.Add(new ChatCommand(@"/alr (?<RotateX>.+),(?<RotateY>.+),(?<RotateZ>.+)",       (C, A) => ExecAlignCommand(SubCommand.Rotate, C, A), "Letzte /al {BaseToAlignId} um {RotateX},{RotateY},{RotateZ} drehen"));
+            ChatCommands.Add(new ChatCommand(@"/als (?<ShiftX>.+),(?<ShiftY>.+),(?<ShiftZ>.+)", (C, A) => ExecAlignCommand(SubCommand.Shift, C, A), "Letzte /al {BaseToAlignId} um {ShiftX},{ShiftY},{ShiftZ} verschieben"));
+            ChatCommands.Add(new ChatCommand(@"/alr (?<RotateX>.+),(?<RotateY>.+),(?<RotateZ>.+)",       (C, A) => ExecAlignCommand(SubCommand.Rotate, C, A), "Letzte /al {BaseToAlignId} um {RotateX},{RotateY},{RotateZ} drehen"));
         }
 
         private void EmpyrionBaseAlign_Event_Entity_PosAndRot(IdPositionRotation aData)
@@ -68,15 +73,15 @@ namespace EmpyrionBaseAlign
             
             if (CurrentAlignData.MainBaseId != 0)
             {
-                this.log($"**HandleEmpyrionBaseAlign:ExecAlign {MainBase.id} pos= {MainBase.pos.x},{MainBase.pos.y},{MainBase.pos.z} rot= {MainBase.rot.x},{MainBase.rot.y},{MainBase.rot.z} Align: {BaseToAlign.id} pos= {BaseToAlign.pos.x},{BaseToAlign.pos.y},{BaseToAlign.pos.z} rot= {BaseToAlign.rot.x},{BaseToAlign.rot.y},{BaseToAlign.rot.z} Shift={CurrentAlignData.ShiftVector.X},{CurrentAlignData.ShiftVector.Y},{CurrentAlignData.ShiftVector.Z}  Rotate={CurrentAlignData.RotateVector.X},{CurrentAlignData.RotateVector.Y},{CurrentAlignData.RotateVector.Z}");
+                log($"**HandleEmpyrionBaseAlign:ExecAlign {MainBase.id} pos= {MainBase.pos.x},{MainBase.pos.y},{MainBase.pos.z} rot= {MainBase.rot.x},{MainBase.rot.y},{MainBase.rot.z} Align: {BaseToAlign.id} pos= {BaseToAlign.pos.x},{BaseToAlign.pos.y},{BaseToAlign.pos.z} rot= {BaseToAlign.rot.x},{BaseToAlign.rot.y},{BaseToAlign.rot.z} Shift={CurrentAlignData.ShiftVector.X},{CurrentAlignData.ShiftVector.Y},{CurrentAlignData.ShiftVector.Z}  Rotate={CurrentAlignData.RotateVector.X},{CurrentAlignData.RotateVector.Y},{CurrentAlignData.RotateVector.Z}", LogLevel.Message);
 
                 PlayerLastAlignData[CurrentAlignData.PlayerId] = CurrentAlignData;
 
                 AlignResult = ExecAlign(MainBase, BaseToAlign, CurrentAlignData.ShiftVector, CurrentAlignData.RotateVector);
             }
 
-            this.log($"**HandleEmpyrionBaseAlign:Align {(CurrentAlignData.MainBaseId == 0 ? "UNDO" : "")} setposition {BaseToAlign.id} {BaseToAlign.pos.x},{BaseToAlign.pos.y},{BaseToAlign.pos.z} setrotation {BaseToAlign.id} {BaseToAlign.rot.x},{BaseToAlign.rot.y},{BaseToAlign.rot.z} -> \n" +
-                     $"setposition {BaseToAlign.id} {AlignResult.pos.x},{AlignResult.pos.y},{AlignResult.pos.z} setrotation {BaseToAlign.id} {AlignResult.rot.x},{AlignResult.rot.y},{AlignResult.rot.z}");
+            log($"**HandleEmpyrionBaseAlign:Align {(CurrentAlignData.MainBaseId == 0 ? "UNDO" : "")} setposition {BaseToAlign.id} {BaseToAlign.pos.x},{BaseToAlign.pos.y},{BaseToAlign.pos.z} setrotation {BaseToAlign.id} {BaseToAlign.rot.x},{BaseToAlign.rot.y},{BaseToAlign.rot.z} -> \n" +
+                     $"setposition {BaseToAlign.id} {AlignResult.pos.x},{AlignResult.pos.y},{AlignResult.pos.z} setrotation {BaseToAlign.id} {AlignResult.rot.x},{AlignResult.rot.y},{AlignResult.rot.z}", LogLevel.Message);
             GameAPI.Game_Request(CmdId.Request_Entity_Teleport, 1, AlignResult);
             WithinAlign = false;
         }
@@ -89,7 +94,7 @@ namespace EmpyrionBaseAlign
 
         private void ExecAlignCommand(SubCommand aSubCommand, ChatInfo info, Dictionary<string, string> args)
         {
-            this.log($"**HandleEmpyrionBaseAlign {info.type}:{info.msg} {args.Aggregate("", (s, i) => s + i.Key + "/" + i.Value + " ")}");
+            log($"**HandleEmpyrionBaseAlign {info.type}:{info.msg} {args.Aggregate("", (s, i) => s + i.Key + "/" + i.Value + " ")}", LogLevel.Message);
 
             if (info.type != (byte)ChatType.Faction) return;
 
@@ -117,18 +122,33 @@ namespace EmpyrionBaseAlign
 
         private void CheckPlayerPermissionThenExecAlign(ChatInfo info)
         {
-            this.Request_Player_Info(info.playerId.ToId(), (I) =>
+            Request_GlobalStructure_List(G =>
             {
-                var playerPermissionLevel = (PermissionType)I.permission;
+                Request_Player_Info(info.playerId.ToId(), (I) =>
+                {
+                    var playerPermissionLevel = I.permission;
 
-                if (playerPermissionLevel > PermissionType.Player) GetPosAndRotThenExecAlign();
-                else
-                    this.Request_Structure_BlockStatistics(new Id(CurrentAlignData.BaseToAlignId), O =>
+                    if (playerPermissionLevel >= ConfigurationManager.CurrentConfiguration.FreePermissionLevel) GetPosAndRotThenExecAlign();
+                    else if(ConfigurationManager.CurrentConfiguration.ForbiddenPlayfields.Contains(I.playfield)) InformPlayer(info.playerId, $"BaseAlign: Playfield ist verboten");
+                    else
                     {
-                        if (O.blockStatistics.Aggregate(0, (s, i) => s + i.Value) > 10) this.log($"**HandleEmpyrionBaseAlign {info.type}:{info.msg} {O.blockStatistics.Aggregate("", (s, i) => s + i.Key + "/" + i.Value + " ")} -> zu viele Blöcke");
-                        else                                                            GetPosAndRotThenExecAlign();
-                    });
+                        var StructureInfoA = SearchEntity(G, CurrentAlignData.BaseToAlignId);
+                        var StructureInfoB = SearchEntity(G, CurrentAlignData.MainBaseId);
+                        if (StructureInfoA.factionId == I.factionId && StructureInfoB.factionId == I.factionId) GetPosAndRotThenExecAlign();
+                        else InformPlayer(info.playerId, $"BaseAlign: Basen stehen nicht beide auf der Fraktion des Spielers");
+                    }
+                });
             });
+        }
+
+        public static GlobalStructureInfo SearchEntity(GlobalStructureList aGlobalStructureList, int aSourceId)
+        {
+            foreach (var TestPlayfieldEntites in aGlobalStructureList.globalStructures)
+            {
+                var FoundEntity = TestPlayfieldEntites.Value.FirstOrDefault(E => E.id == aSourceId);
+                if (FoundEntity.id != 0) return FoundEntity;
+            }
+            return new GlobalStructureInfo();
         }
 
         private void GetPosAndRotThenExecAlign()
@@ -150,12 +170,12 @@ namespace EmpyrionBaseAlign
 
         private void DisplayHelp(ChatInfo info)
         {
-            this.Request_Player_Info(info.playerId.ToId(), (I) =>
+            Request_Player_Info(info.playerId.ToId(), (I) =>
             {
                 var playerPermissionLevel = (PermissionType)I.permission;
                 var header = $"Befehle für {I.playerName} mit den Rechten {playerPermissionLevel}\n";
 
-                var lines = this.GetChatCommandsForPermissionLevel(playerPermissionLevel)
+                var lines = GetChatCommandsForPermissionLevel(playerPermissionLevel)
           .Select(x => x.ToString())
           .OrderBy(x => x.Length).ToList();
 
