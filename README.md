@@ -1,16 +1,16 @@
-# Empyrion Base Align
+Ôªø# Empyrion Base Align
 ## FAQ
 
-Eine ¸bersetzte Version findet ihr im EmpyrionBaseAlign/bin Verzeichnis falls ihr die Mod nicht selber pr¸fen und compilieren wollt ;-)
+Eine √ºbersetzte Version findet ihr im EmpyrionBaseAlign/bin Verzeichnis falls ihr die Mod nicht selber pr√ºfen und compilieren wollt ;-)
 
 ### What is this?
 
-Es soll dazu dienen eine neue Basis (AlignBase) so auszurichten und zu positionieren das sie im Rastermaﬂ einer bestehenden Basis (MainBase) liegt und beim Bauen nahtlos an diese anschlieﬂt
+Es soll dazu dienen eine neue Basis (AlignBase) so auszurichten und zu positionieren das sie im Rasterma√ü einer bestehenden Basis (MainBase) liegt und beim Bauen nahtlos an diese anschlie√üt
 
 #### What are all the commands?
 
-Hinweis: Zur Zeit ist implementiert das ein Spieler nur eine Basis ausrichten kann die nicht mehr als 10 Blˆcke hat, also direkt nach dem Setzen des Basisstarter. 
-Damit werden viele Exploids vermieden die sich sonst ergeben w¸rden. Spieler mit einer hˆheren Berechtigung d¸rfen alles Ausrichten.
+Hinweis: Zur Zeit ist implementiert das ein Spieler nur eine Basis ausrichten kann die nicht mehr als 10 Bl√∂cke hat, also direkt nach dem Setzen des Basisstarter. 
+Damit werden viele Exploids vermieden die sich sonst ergeben w√ºrden. Spieler mit einer h√∂heren Berechtigung d√ºrfen alles Ausrichten.
 
 #### Help
 
@@ -25,14 +25,28 @@ Damit werden viele Exploids vermieden die sich sonst ergeben w¸rden. Spieler mit
 * /als {ShiftX},{ShiftY},{ShiftZ}		=> Letzte /al Basis um XYZ verschieben
 * /alr {RotateX},{RotateY},{RotateZ}    => Letzte /al Basis um XYZ drehen
 
-Richtet die Basis (BaseToAlignId) so aus und positioniert sie das sie im Rastermaﬂ einer bestehenden Basis (MainBaseId) liegt und beim Bauen nahtlos an diese anschlieﬂt.
+Richtet die Basis (BaseToAlignId) so aus und positioniert sie das sie im Rasterma√ü einer bestehenden Basis (MainBaseId) liegt und beim Bauen nahtlos an diese anschlie√üt.
 
-UNDO: Wenn die {MainBaseId} = 0 ist wird die Basis {BaseToAlignId} wieder an die urspr¸ngliche Position und Ausrichtung zur¸ckgesetzt werden.
+UNDO: Wenn die {MainBaseId} = 0 ist wird die Basis {BaseToAlignId} wieder an die urspr√ºngliche Position und Ausrichtung zur√ºckgesetzt werden.
+
+Tipp: mit "/al ID ID" kann man auch eine einzelne Basis noch mal verschieben und drehen ;-)
 
 ### Restore?
-Im Logfile werden die 'setposition' und 'setrotation' Kommandos hinterlegt die zur Restaurierung der 'alten' Position und Ausrichtung genutzt werden kˆnnen
+Im Logfile werden die 'setposition' und 'setrotation' Kommandos hinterlegt die zur Restaurierung der 'alten' Position und Ausrichtung genutzt werden k√∂nnen
 
 ### Is that it?
-Zun‰chst erstmal und damit viel Spaﬂ beim natlosen Bauen w¸nscht euch
+Zun√§chst erstmal und damit viel Spa√ü beim natlosen Bauen w√ºnscht euch
+
+### Konfiguration
+Eine Konfiguration kann man in der Datei (wird beim ersten Start automatisch erstellt)
+
+[Empyrion Directory]\Saves\Games\\[SaveGameName]\Mods\EmpyrionBaseAlign\Config.xml
+
+vornehmen.
+
+* FreePermissionLevel: Ab welcher Rolle ist das √§ndern beliebiger Basen erlaubt (Player, GameMaster, Moderator, Admin)
+* ForbiddenPlayfields: Liste der Playfields in denen keine Basenausrichtung erlaubt ist
+  - Beispieleintrag: <string>Akua</string>
+
 
 ASTIC/TC
