@@ -24,8 +24,8 @@ Damit werden viele Exploids vermieden die sich sonst ergeben würden. Spieler mi
 * /al {BaseToAlignId} {MainBaseId}
 * /al {BaseToAlignId} 0
 
-* /als {ShiftX} {ShiftY} {ShiftZ}		=> Letzte /al Basis um XYZ verschieben
-* /alr {RotateX} {RotateY} {RotateZ}    => Letzte /al Basis um XYZ drehen
+* /als {ShiftX} {ShiftY} {ShiftZ}		=> Letzte /al Basis um X Y Z verschieben
+* /alr {RotateX} {RotateY} {RotateZ}    => Letzte /al Basis um X Y Z drehen
 
 Richtet die Basis (BaseToAlignId) so aus und positioniert sie das sie im Rastermaß einer bestehenden Basis (MainBaseId) liegt und beim Bauen nahtlos an diese anschließt.
 
