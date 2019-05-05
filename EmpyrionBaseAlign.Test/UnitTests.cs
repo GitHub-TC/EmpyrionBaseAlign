@@ -1,6 +1,7 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Eleon.Modding;
+using System.Numerics;
 
 namespace EmpyrionBaseAlign.Test
 {

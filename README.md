@@ -1,7 +1,9 @@
 ﻿# Empyrion Base Align
-## FAQ
+## Installation
+1. Download der aktuellen ZIP datei von https://github.com/GitHub-TC/EmpyrionBaseAlign/releases
+1. Upload der Datei im EWA (EmpyrionWebAccess) MOD oder händische installation mit dem ModLoader aus https://github.com/GitHub-TC/EmpyrionModHost
 
-Eine übersetzte Version findet ihr im EmpyrionBaseAlign/bin Verzeichnis falls ihr die Mod nicht selber prüfen und compilieren wollt ;-)
+Demo: https://empyriononline.com/threads/mod-empyrionbasealign.38620/
 
 ### What is this?
 
@@ -22,8 +24,8 @@ Damit werden viele Exploids vermieden die sich sonst ergeben würden. Spieler mi
 * /al {BaseToAlignId} {MainBaseId}
 * /al {BaseToAlignId} 0
 
-* /als {ShiftX},{ShiftY},{ShiftZ}		=> Letzte /al Basis um XYZ verschieben
-* /alr {RotateX},{RotateY},{RotateZ}    => Letzte /al Basis um XYZ drehen
+* /als {ShiftX} {ShiftY} {ShiftZ}		=> Letzte /al Basis um XYZ verschieben
+* /alr {RotateX} {RotateY} {RotateZ}    => Letzte /al Basis um XYZ drehen
 
 Richtet die Basis (BaseToAlignId) so aus und positioniert sie das sie im Rastermaß einer bestehenden Basis (MainBaseId) liegt und beim Bauen nahtlos an diese anschließt.
 
@@ -40,7 +42,7 @@ Zunächst erstmal und damit viel Spaß beim natlosen Bauen wünscht euch
 ### Konfiguration
 Eine Konfiguration kann man in der Datei (wird beim ersten Start automatisch erstellt)
 
-[Empyrion Directory]\Saves\Games\\[SaveGameName]\Mods\EmpyrionBaseAlign\Config.xml
+[Empyrion Directory]\Saves\Games\\[SaveGameName]\Mods\EmpyrionBaseAlign\Configuration.json
 
 vornehmen.
 

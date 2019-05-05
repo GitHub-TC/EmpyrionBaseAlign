@@ -1,12 +1,15 @@
-﻿using System;
-using Eleon.Modding;
-using EmpyrionAPITools;
+﻿using Eleon.Modding;
+using EmpyrionNetAPIAccess;
+using EmpyrionNetAPITools;
+using EmpyrionNetAPIDefinitions;
+using System;
 using System.Collections.Generic;
-using EmpyrionAPIDefinitions;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using System.IO;
+using System.Threading.Tasks;
 
 namespace EmpyrionBaseAlign
 {
@@ -26,7 +29,7 @@ namespace EmpyrionBaseAlign
         }
 
     }
-    public partial class EmpyrionBaseAlign : SimpleMod
+    public partial class EmpyrionBaseAlign : EmpyrionModBase
     {
         public ModGameAPI GameAPI { get; set; }
         public IdPositionRotation BaseToAlign { get; private set; }
@@ -35,7 +38,7 @@ namespace EmpyrionBaseAlign
 
         public Dictionary<int, IdPositionRotation> OriginalPosRot { get; set; } = new Dictionary<int, IdPositionRotation>();
 
-        public ConfigurationManager ConfigurationManager { get; set; }
+        public ConfigurationManager<Configuration> Configuration { get; set; }
 
         class LastAlignData
         {
@@ -58,23 +61,39 @@ namespace EmpyrionBaseAlign
             Rotate,
         }
 
+        public EmpyrionBaseAlign()
+        {
+            EmpyrionConfiguration.ModName = "EmpyrionBaseAlign";
+        }
+
         public override void Initialize(ModGameAPI aGameAPI)
         {
             GameAPI = aGameAPI;
             verbose = true;
             LogLevel = LogLevel.Message;
-            ConfigurationManager.Logger = log;
-            ConfigurationManager = new ConfigurationManager();
 
             log($"**HandleEmpyrionBaseAlign loaded", LogLevel.Message);
+            LoadConfiguration();
 
             Event_Entity_PosAndRot += EmpyrionBaseAlign_Event_Entity_PosAndRot;
 
             ChatCommands.Add(new ChatCommand(@"/al", (C, A) => ExecAlignCommand(SubCommand.Help, C, A), "Hilfe anzeigen"));
-            ChatCommands.Add(new ChatCommand(@"/al (?<BaseToAlignId>\d+) (?<MainBaseId>\d+)",   (C, A) => ExecAlignCommand(SubCommand.Align, C, A), "Basis {BaseToAlignId} an Basis {MainBaseId} ausrichten"));
+            ChatCommands.Add(new ChatCommand(@"/al (?<BaseToAlignId>\d+) (?<MainBaseId>\d+)", (C, A) => ExecAlignCommand(SubCommand.Align, C, A), "Basis {BaseToAlignId} an Basis {MainBaseId} ausrichten"));
 
-            ChatCommands.Add(new ChatCommand(@"/als (?<ShiftX>.+),(?<ShiftY>.+),(?<ShiftZ>.+)", (C, A) => ExecAlignCommand(SubCommand.Shift, C, A), "Letzte /al {BaseToAlignId} um {ShiftX},{ShiftY},{ShiftZ} verschieben"));
-            ChatCommands.Add(new ChatCommand(@"/alr (?<RotateX>.+),(?<RotateY>.+),(?<RotateZ>.+)",       (C, A) => ExecAlignCommand(SubCommand.Rotate, C, A), "Letzte /al {BaseToAlignId} um {RotateX},{RotateY},{RotateZ} drehen"));
+            ChatCommands.Add(new ChatCommand(@"/als (?<ShiftX>.+) (?<ShiftY>.+) (?<ShiftZ>.+)", (C, A) => ExecAlignCommand(SubCommand.Shift, C, A), "Letzte /al {BaseToAlignId} um {ShiftX} {ShiftY} {ShiftZ} verschieben"));
+            ChatCommands.Add(new ChatCommand(@"/alr (?<RotateX>.+) (?<RotateY>.+) (?<RotateZ>.+)", (C, A) => ExecAlignCommand(SubCommand.Rotate, C, A), "Letzte /al {BaseToAlignId} um {RotateX} {RotateY} {RotateZ} drehen"));
+        }
+
+        private void LoadConfiguration()
+        {
+            ConfigurationManager<Configuration>.Log = log;
+            Configuration = new ConfigurationManager<Configuration>()
+            {
+                ConfigFilename = Path.Combine(EmpyrionConfiguration.SaveGameModPath, "Configuration.json")
+            };
+
+            Configuration.Load();
+            Configuration.Save();
         }
 
         private void EmpyrionBaseAlign_Event_Entity_PosAndRot(IdPositionRotation aData)
@@ -110,7 +129,7 @@ namespace EmpyrionBaseAlign
             Faction = 5,
         }
 
-        private void ExecAlignCommand(SubCommand aSubCommand, ChatInfo info, Dictionary<string, string> args)
+        private async Task ExecAlignCommand(SubCommand aSubCommand, ChatInfo info, Dictionary<string, string> args)
         {
             log($"**HandleEmpyrionBaseAlign {info.type}:{info.msg} {args.Aggregate("", (s, i) => s + i.Key + "/" + i.Value + " ")}", LogLevel.Message);
 
@@ -120,7 +139,7 @@ namespace EmpyrionBaseAlign
 
             switch (aSubCommand)
             {
-                case SubCommand.Help  : DisplayHelp(info.playerId); return;
+                case SubCommand.Help  : await DisplayHelp(info.playerId); return;
                 case SubCommand.Align : CurrentAlignData.BaseToAlignId = getIntParam(args, "BaseToAlignId");
                                         CurrentAlignData.MainBaseId    = getIntParam(args, "MainBaseId");
                                         CurrentAlignData.ShiftVector   = Vector3.Zero;
@@ -135,28 +154,25 @@ namespace EmpyrionBaseAlign
             MainBase = BaseToAlign = null;
             WithinAlign = false;
 
-            CheckPlayerPermissionThenExecAlign(info);
+            await CheckPlayerPermissionThenExecAlign(info);
         }
 
-        private void CheckPlayerPermissionThenExecAlign(ChatInfo info)
+        private async Task CheckPlayerPermissionThenExecAlign(ChatInfo info)
         {
-            Request_GlobalStructure_List(G =>
-            {
-                Request_Player_Info(info.playerId.ToId(), (I) =>
-                {
-                    var playerPermissionLevel = (PermissionType)I.permission;
+            var G = await Request_GlobalStructure_List();
+            var I = await Request_Player_Info(info.playerId.ToId());
 
-                    if (playerPermissionLevel >= ConfigurationManager.CurrentConfiguration.FreePermissionLevel) GetPosAndRotThenExecAlign();
-                    else if(ConfigurationManager.CurrentConfiguration.ForbiddenPlayfields.Contains(I.playfield)) InformPlayer(info.playerId, $"BaseAlign: Playfield ist verboten");
-                    else
-                    {
-                        var StructureInfoA = SearchEntity(G, CurrentAlignData.BaseToAlignId);
-                        var StructureInfoB = SearchEntity(G, CurrentAlignData.MainBaseId);
-                        if (StructureInfoA.factionId == I.factionId && StructureInfoB.factionId == I.factionId) GetPosAndRotThenExecAlign();
-                        else InformPlayer(info.playerId, $"BaseAlign: Basen stehen nicht beide auf der Fraktion des Spielers");
-                    }
-                });
-            });
+            var playerPermissionLevel = (PermissionType)I.permission;
+
+            if (playerPermissionLevel >= Configuration.Current.FreePermissionLevel) GetPosAndRotThenExecAlign();
+            else if(Configuration.Current.ForbiddenPlayfields.Contains(I.playfield)) InformPlayer(info.playerId, $"BaseAlign: Playfield ist verboten");
+            else
+            {
+                var StructureInfoA = SearchEntity(G, CurrentAlignData.BaseToAlignId);
+                var StructureInfoB = SearchEntity(G, CurrentAlignData.MainBaseId);
+                if (StructureInfoA.factionId == I.factionId && StructureInfoB.factionId == I.factionId) GetPosAndRotThenExecAlign();
+                else InformPlayer(info.playerId, $"BaseAlign: Basen stehen nicht beide auf der Fraktion des Spielers");
+            }
         }
 
         public static GlobalStructureInfo SearchEntity(GlobalStructureList aGlobalStructureList, int aSourceId)
@@ -186,27 +202,11 @@ namespace EmpyrionBaseAlign
             return value;
         }
 
-        void ShowDialog(int aPlayerId, PlayerInfo aPlayer, string aTitle, string aMessage)
+        private async Task DisplayHelp(int aPlayerId)
         {
-            Request_ShowDialog_SinglePlayer(new DialogBoxData()
-            {
-                Id = aPlayerId,
-                MsgText = $"{aTitle}: [c][ffffff]{aPlayer.playerName}[-][/c] with permission [c][ffffff]{(PermissionType)aPlayer.permission}[-][/c]\n" + aMessage,
-            });
-        }
-
-        private void DisplayHelp(int aPlayerId)
-        {
-            Request_Player_Info(aPlayerId.ToId(), (P) =>
-            {
-                var CurrentAssembly = Assembly.GetAssembly(this.GetType());
-                //[c][hexid][-][/c]    [c][019245]test[-][/c].
-
-                ShowDialog(aPlayerId, P, "Commands",
-                    "\n" + String.Join("\n", GetChatCommandsForPermissionLevel((PermissionType)P.permission).Select(C => C.MsgString()).ToArray()) +
-                    $"\n\n[c][c0c0c0]{CurrentAssembly.GetAttribute<AssemblyTitleAttribute>()?.Title} by {CurrentAssembly.GetAttribute<AssemblyCompanyAttribute>()?.Company} Version:{CurrentAssembly.GetAttribute<AssemblyFileVersionAttribute>()?.Version}[-][/c]"
-                    );
-            });
+            await DisplayHelp(aPlayerId,
+                Configuration.Current.ForbiddenPlayfields?.Aggregate("[c][00ffff]ForbiddenPlayfields:[-][/c]", (s, p) => s + $"\n {p}")
+            );
         }
 
         private void GetEntity_PosAndRot(int aId)
