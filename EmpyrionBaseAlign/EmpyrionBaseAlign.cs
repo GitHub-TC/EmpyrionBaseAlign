@@ -224,9 +224,12 @@ namespace EmpyrionBaseAlign
             return new PVector3(aVector.X, aVector.Y, aVector.Z);
         }
 
-        public static Matrix4x4 GetMatrix4x4(PVector3 aVector)
+        public static Matrix4x4 GetMatrix4x4(Vector3 aVector)
         {
-            return Matrix4x4.CreateFromYawPitchRoll(aVector.y * (float)(Math.PI / 180), aVector.z * (float)(Math.PI / 180), aVector.x * (float)(Math.PI / 180));
+            return Matrix4x4.CreateFromYawPitchRoll(
+                aVector.Y.ToRadians(),
+                aVector.X.ToRadians(),
+                aVector.Z.ToRadians());
         }
 
         public static IdPositionRotation ExecAlign(IdPositionRotation aMainBase, IdPositionRotation aBaseToAlign, Vector3 aShiftVector, Vector3 aRotateVector)
@@ -234,7 +237,7 @@ namespace EmpyrionBaseAlign
             var posHomeBase  = GetVector3(aMainBase.pos);
             var posAlignBase = GetVector3(aBaseToAlign.pos);
 
-            var posHomeBaseRotBack = GetMatrix4x4(aMainBase.rot);
+            var posHomeBaseRotBack = GetMatrix4x4(GetVector3(aMainBase.rot));
             var posHomeBaseRot     = posHomeBaseRotBack.Transpose();
 
             var posNormAlignBaseTrans = posAlignBase - posHomeBase;
