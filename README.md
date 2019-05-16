@@ -16,16 +16,16 @@ Damit werden viele Exploids vermieden die sich sonst ergeben würden. Spieler mi
 
 #### Help
 
-* /al : Zeigt die Kommandos der Mod an
+* \al : Zeigt die Kommandos der Mod an
 
 #### Align
 
-* /al {BaseToAlignId} {MainBaseId}
-* /al {BaseToAlignId} {MainBaseId}
-* /al {BaseToAlignId} 0
+* \al {BaseToAlignId} {MainBaseId}
+* \al {BaseToAlignId} {MainBaseId}
+* \al {BaseToAlignId} 0
 
-* /als {ShiftX} {ShiftY} {ShiftZ}		=> Letzte /al Basis um X Y Z verschieben
-* /alr {RotateX} {RotateY} {RotateZ}    => Letzte /al Basis um X Y Z drehen
+* \als {ShiftX} {ShiftY} {ShiftZ}		=> Letzte \al Basis um X Y Z verschieben
+* \alr {RotateX} {RotateY} {RotateZ}    => Letzte \al Basis um X Y Z drehen
 
 Richtet die Basis (BaseToAlignId) so aus und positioniert sie das sie im Rastermaß einer bestehenden Basis (MainBaseId) liegt und beim Bauen nahtlos an diese anschließt.
 
