@@ -73,14 +73,15 @@ namespace EmpyrionBaseAlign
             log($"**HandleEmpyrionBaseAlign loaded", LogLevel.Message);
             LoadConfiguration();
             LogLevel = Configuration.Current.LogLevel;
+            ChatCommandManager.CommandPrefix = Configuration.Current.CommandPrefix;
 
             Event_Entity_PosAndRot += EmpyrionBaseAlign_Event_Entity_PosAndRot;
 
-            ChatCommands.Add(new ChatCommand(@"\\al", (C, A) => ExecAlignCommand(SubCommand.Help, C, A), "Hilfe anzeigen"));
-            ChatCommands.Add(new ChatCommand(@"\\al (?<BaseToAlignId>\d+) (?<MainBaseId>\d+)", (C, A) => ExecAlignCommand(SubCommand.Align, C, A), "Basis {BaseToAlignId} an Basis {MainBaseId} ausrichten"));
+            ChatCommands.Add(new ChatCommand(@"al", (C, A) => ExecAlignCommand(SubCommand.Help, C, A), "Hilfe anzeigen"));
+            ChatCommands.Add(new ChatCommand(@"al (?<BaseToAlignId>\d+) (?<MainBaseId>\d+)", (C, A) => ExecAlignCommand(SubCommand.Align, C, A), "Basis {BaseToAlignId} an Basis {MainBaseId} ausrichten"));
 
-            ChatCommands.Add(new ChatCommand(@"\\als (?<ShiftX>.+) (?<ShiftY>.+) (?<ShiftZ>.+)", (C, A) => ExecAlignCommand(SubCommand.Shift, C, A), "Letzte /al {BaseToAlignId} um {ShiftX} {ShiftY} {ShiftZ} verschieben"));
-            ChatCommands.Add(new ChatCommand(@"\\alr (?<RotateX>.+) (?<RotateY>.+) (?<RotateZ>.+)", (C, A) => ExecAlignCommand(SubCommand.Rotate, C, A), "Letzte /al {BaseToAlignId} um {RotateX} {RotateY} {RotateZ} drehen"));
+            ChatCommands.Add(new ChatCommand(@"als (?<ShiftX>.+) (?<ShiftY>.+) (?<ShiftZ>.+)", (C, A) => ExecAlignCommand(SubCommand.Shift, C, A), "Letzte /al {BaseToAlignId} um {ShiftX} {ShiftY} {ShiftZ} verschieben"));
+            ChatCommands.Add(new ChatCommand(@"alr (?<RotateX>.+) (?<RotateY>.+) (?<RotateZ>.+)", (C, A) => ExecAlignCommand(SubCommand.Rotate, C, A), "Letzte /al {BaseToAlignId} um {RotateX} {RotateY} {RotateZ} drehen"));
         }
 
         private void LoadConfiguration()

@@ -11,6 +11,7 @@ namespace EmpyrionBaseAlign
         [JsonConverter(typeof(StringEnumConverter))]
         public PermissionType FreePermissionLevel { get; set; } = PermissionType.Moderator;
         public string[] ForbiddenPlayfields { get; set; } = new string[] { "" };
+        public string CommandPrefix { get; set; } = "/\\";
     }
 
 }
