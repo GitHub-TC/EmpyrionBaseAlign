@@ -70,23 +70,24 @@ namespace EmpyrionBaseAlign
         {
             GameAPI = aGameAPI;
 
-            log($"**HandleEmpyrionBaseAlign loaded", LogLevel.Message);
+            Log($"**HandleEmpyrionBaseAlign loaded", LogLevel.Message);
             LoadConfiguration();
             LogLevel = Configuration.Current.LogLevel;
             ChatCommandManager.CommandPrefix = Configuration.Current.CommandPrefix;
 
             Event_Entity_PosAndRot += EmpyrionBaseAlign_Event_Entity_PosAndRot;
 
-            ChatCommands.Add(new ChatCommand(@"al", (C, A) => ExecAlignCommand(SubCommand.Help, C, A), "Hilfe anzeigen"));
-            ChatCommands.Add(new ChatCommand(@"al (?<BaseToAlignId>\d+) (?<MainBaseId>\d+)", (C, A) => ExecAlignCommand(SubCommand.Align, C, A), "Basis {BaseToAlignId} an Basis {MainBaseId} ausrichten"));
+            ChatCommands.Add(new ChatCommand(@"al help",                                            (C, A) => ExecAlignCommand(SubCommand.Help, C, A), "Hilfe anzeigen"));
+            ChatCommands.Add(new ChatCommand(@"al (?<BaseToAlignId>\d+) (?<MainBaseId>\d+)",        (C, A) => ExecAlignCommand(SubCommand.Align, C, A), "Basis {BaseToAlignId} an Basis {MainBaseId} ausrichten, verschieben und drehen"));
+            ChatCommands.Add(new ChatCommand(@"al (?<BaseToAlignId>\d+)",                           (C, A) => ExecAlignCommand(SubCommand.Align, C, A), "Basis {BaseToAlignId} verschieben/drehen"));
 
-            ChatCommands.Add(new ChatCommand(@"als (?<ShiftX>.+) (?<ShiftY>.+) (?<ShiftZ>.+)", (C, A) => ExecAlignCommand(SubCommand.Shift, C, A), "Letzte /al {BaseToAlignId} um {ShiftX} {ShiftY} {ShiftZ} verschieben"));
-            ChatCommands.Add(new ChatCommand(@"alr (?<RotateX>.+) (?<RotateY>.+) (?<RotateZ>.+)", (C, A) => ExecAlignCommand(SubCommand.Rotate, C, A), "Letzte /al {BaseToAlignId} um {RotateX} {RotateY} {RotateZ} drehen"));
+            ChatCommands.Add(new ChatCommand(@"als (?<ShiftX>.+) (?<ShiftY>.+) (?<ShiftZ>.+)",      (C, A) => ExecAlignCommand(SubCommand.Shift, C, A), "Letzte /al {BaseToAlignId} um {ShiftX} {ShiftY} {ShiftZ} verschieben"));
+            ChatCommands.Add(new ChatCommand(@"alr (?<RotateX>.+) (?<RotateY>.+) (?<RotateZ>.+)",   (C, A) => ExecAlignCommand(SubCommand.Rotate, C, A), "Letzte /al {BaseToAlignId} um {RotateX} {RotateY} {RotateZ} drehen"));
         }
 
         private void LoadConfiguration()
         {
-            ConfigurationManager<Configuration>.Log = log;
+            ConfigurationManager<Configuration>.Log = Log;
             Configuration = new ConfigurationManager<Configuration>()
             {
                 ConfigFilename = Path.Combine(EmpyrionConfiguration.SaveGameModPath, "Configuration.json")
@@ -110,14 +111,14 @@ namespace EmpyrionBaseAlign
             
             if (CurrentAlignData.MainBaseId != 0)
             {
-                log($"**HandleEmpyrionBaseAlign:ExecAlign {MainBase.id} pos= {MainBase.pos.x},{MainBase.pos.y},{MainBase.pos.z} rot= {MainBase.rot.x},{MainBase.rot.y},{MainBase.rot.z} Align: {BaseToAlign.id} pos= {BaseToAlign.pos.x},{BaseToAlign.pos.y},{BaseToAlign.pos.z} rot= {BaseToAlign.rot.x},{BaseToAlign.rot.y},{BaseToAlign.rot.z} Shift={CurrentAlignData.ShiftVector.X},{CurrentAlignData.ShiftVector.Y},{CurrentAlignData.ShiftVector.Z}  Rotate={CurrentAlignData.RotateVector.X},{CurrentAlignData.RotateVector.Y},{CurrentAlignData.RotateVector.Z}", LogLevel.Message);
+                Log($"**HandleEmpyrionBaseAlign:ExecAlign {MainBase.id} pos= {MainBase.pos.x},{MainBase.pos.y},{MainBase.pos.z} rot= {MainBase.rot.x},{MainBase.rot.y},{MainBase.rot.z} Align: {BaseToAlign.id} pos= {BaseToAlign.pos.x},{BaseToAlign.pos.y},{BaseToAlign.pos.z} rot= {BaseToAlign.rot.x},{BaseToAlign.rot.y},{BaseToAlign.rot.z} Shift={CurrentAlignData.ShiftVector.X},{CurrentAlignData.ShiftVector.Y},{CurrentAlignData.ShiftVector.Z}  Rotate={CurrentAlignData.RotateVector.X},{CurrentAlignData.RotateVector.Y},{CurrentAlignData.RotateVector.Z}", LogLevel.Message);
 
                 PlayerLastAlignData[CurrentAlignData.PlayerId] = CurrentAlignData;
 
                 AlignResult = ExecAlign(MainBase, BaseToAlign, CurrentAlignData.ShiftVector, CurrentAlignData.RotateVector);
             }
 
-            log($"**HandleEmpyrionBaseAlign:Align {(CurrentAlignData.MainBaseId == 0 ? "UNDO" : "")} setposition {BaseToAlign.id} {BaseToAlign.pos.x},{BaseToAlign.pos.y},{BaseToAlign.pos.z} setrotation {BaseToAlign.id} {BaseToAlign.rot.x},{BaseToAlign.rot.y},{BaseToAlign.rot.z} -> \n" +
+            Log($"**HandleEmpyrionBaseAlign:Align {(CurrentAlignData.MainBaseId == 0 ? "UNDO" : "")} setposition {BaseToAlign.id} {BaseToAlign.pos.x},{BaseToAlign.pos.y},{BaseToAlign.pos.z} setrotation {BaseToAlign.id} {BaseToAlign.rot.x},{BaseToAlign.rot.y},{BaseToAlign.rot.z} -> \n" +
                      $"setposition {BaseToAlign.id} {AlignResult.pos.x},{AlignResult.pos.y},{AlignResult.pos.z} setrotation {BaseToAlign.id} {AlignResult.rot.x},{AlignResult.rot.y},{AlignResult.rot.z}", LogLevel.Message);
             GameAPI.Game_Request(CmdId.Request_Entity_Teleport, 1, AlignResult);
             WithinAlign = false;
@@ -131,7 +132,7 @@ namespace EmpyrionBaseAlign
 
         private async Task ExecAlignCommand(SubCommand aSubCommand, ChatInfo info, Dictionary<string, string> args)
         {
-            log($"**HandleEmpyrionBaseAlign {info.type}:{info.msg} {args.Aggregate("", (s, i) => s + i.Key + "/" + i.Value + " ")}", LogLevel.Message);
+            Log($"**HandleEmpyrionBaseAlign {info.type}:{info.msg} {args.Aggregate("", (s, i) => s + i.Key + "/" + i.Value + " ")}", LogLevel.Message);
 
             if (info.type != (byte)ChatType.Faction) return;
 
@@ -141,9 +142,10 @@ namespace EmpyrionBaseAlign
             {
                 case SubCommand.Help  : await DisplayHelp(info.playerId); return;
                 case SubCommand.Align : CurrentAlignData.BaseToAlignId = getIntParam(args, "BaseToAlignId");
-                                        CurrentAlignData.MainBaseId    = getIntParam(args, "MainBaseId");
+                                        CurrentAlignData.MainBaseId    = getIntParam(args, "MainBaseId", -1);
                                         CurrentAlignData.ShiftVector   = Vector3.Zero;
                                         CurrentAlignData.RotateVector  = Vector3.Zero;
+                                        if(CurrentAlignData.MainBaseId == -1) CurrentAlignData.MainBaseId = CurrentAlignData.BaseToAlignId;
                                         break;
                 case SubCommand.Shift : CurrentAlignData.ShiftVector  += new Vector3(getIntParam(args, "ShiftX"), getIntParam(args, "ShiftY"), getIntParam(args, "ShiftZ"));
                                         break;
@@ -191,10 +193,10 @@ namespace EmpyrionBaseAlign
             if(CurrentAlignData.MainBaseId != 0) GetEntity_PosAndRot(CurrentAlignData.MainBaseId);
         }
 
-        private int getIntParam(Dictionary<string, string> aArgs, string aParameterName)
+        private int getIntParam(Dictionary<string, string> aArgs, string aParameterName, int defaultIfNotFound = 0)
         {
             string valueStr;
-            if (!aArgs.TryGetValue(aParameterName, out valueStr)) return 0;
+            if (!aArgs.TryGetValue(aParameterName, out valueStr)) return defaultIfNotFound;
 
             int value;
             if (!int.TryParse(valueStr, out value)) return 0;

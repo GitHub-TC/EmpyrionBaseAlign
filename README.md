@@ -16,12 +16,12 @@ Damit werden viele Exploids vermieden die sich sonst ergeben würden. Spieler mi
 
 #### Help
 
-* \al : Zeigt die Kommandos der Mod an
+* \al help : Zeigt die Kommandos der Mod an
 
 #### Align
 
 * \al {BaseToAlignId} {MainBaseId}
-* \al {BaseToAlignId} {MainBaseId}
+* \al {BaseToAlignId} 
 * \al {BaseToAlignId} 0
 
 * \als {ShiftX} {ShiftY} {ShiftZ}		=> Letzte \al Basis um X Y Z verschieben
