@@ -32,21 +32,21 @@ namespace EmpyrionBaseAlign
     public partial class EmpyrionBaseAlign : EmpyrionModBase
     {
         public ModGameAPI GameAPI { get; set; }
-        public IdPositionRotation BaseToAlign { get; private set; }
-        public IdPositionRotation MainBase { get; private set; }
-        public bool WithinAlign { get; private set; }
-
         public Dictionary<int, IdPositionRotation> OriginalPosRot { get; set; } = new Dictionary<int, IdPositionRotation>();
 
         public ConfigurationManager<Configuration> Configuration { get; set; }
 
         class LastAlignData
         {
-            public int PlayerId;
-            public int BaseToAlignId;
-            public int MainBaseId;
-            public Vector3 ShiftVector;
-            public Vector3 RotateVector;
+            public int PlayerId { get; set; }
+            public int BaseToAlignId { get; set; }
+            public int MainBaseId { get; set; }
+            public Vector3 ShiftVector { get; set; }
+            public Vector3 RotateVector { get; set; }
+            public GlobalStructureInfo BaseToAlignStructureInfo { get; set; }
+            public GlobalStructureInfo MainBaseStructureInfo { get; set; }
+            public IdPositionRotation BaseToAlignPosAndRot { get; set; }
+            public IdPositionRotation MainBasePosAndRot { get; internal set; }
         }
 
         Dictionary<int, LastAlignData> PlayerLastAlignData { get; set; } = new Dictionary<int, LastAlignData>();
@@ -59,6 +59,7 @@ namespace EmpyrionBaseAlign
             Align,
             Shift,
             Rotate,
+            Undo,
         }
 
         public EmpyrionBaseAlign()
@@ -75,11 +76,11 @@ namespace EmpyrionBaseAlign
             LogLevel = Configuration.Current.LogLevel;
             ChatCommandManager.CommandPrefix = Configuration.Current.CommandPrefix;
 
-            Event_Entity_PosAndRot += EmpyrionBaseAlign_Event_Entity_PosAndRot;
-
             ChatCommands.Add(new ChatCommand(@"al help",                                            (C, A) => ExecAlignCommand(SubCommand.Help, C, A), "Hilfe anzeigen"));
             ChatCommands.Add(new ChatCommand(@"al (?<BaseToAlignId>\d+) (?<MainBaseId>\d+)",        (C, A) => ExecAlignCommand(SubCommand.Align, C, A), "Basis {BaseToAlignId} an Basis {MainBaseId} ausrichten, verschieben und drehen"));
             ChatCommands.Add(new ChatCommand(@"al (?<BaseToAlignId>\d+)",                           (C, A) => ExecAlignCommand(SubCommand.Align, C, A), "Basis {BaseToAlignId} verschieben/drehen"));
+
+            ChatCommands.Add(new ChatCommand(@"al undo",                                            (C, A) => ExecAlignCommand(SubCommand.Undo, C, A), "Basis wieder auf die Ausgangsposition setzen"));
 
             ChatCommands.Add(new ChatCommand(@"als (?<ShiftX>.+) (?<ShiftY>.+) (?<ShiftZ>.+)",      (C, A) => ExecAlignCommand(SubCommand.Shift, C, A), "Letzte /al {BaseToAlignId} um {ShiftX} {ShiftY} {ShiftZ} verschieben"));
             ChatCommands.Add(new ChatCommand(@"alr (?<RotateX>.+) (?<RotateY>.+) (?<RotateZ>.+)",   (C, A) => ExecAlignCommand(SubCommand.Rotate, C, A), "Letzte /al {BaseToAlignId} um {RotateX} {RotateY} {RotateZ} drehen"));
@@ -97,33 +98,6 @@ namespace EmpyrionBaseAlign
             Configuration.Save();
         }
 
-        private void EmpyrionBaseAlign_Event_Entity_PosAndRot(IdPositionRotation aData)
-        {
-            if (aData.id == CurrentAlignData.MainBaseId   ) MainBase    = aData;
-            if (aData.id == CurrentAlignData.BaseToAlignId) BaseToAlign = aData;
-
-            if ((MainBase == null && CurrentAlignData.MainBaseId != 0) || BaseToAlign == null || WithinAlign) return;
-            WithinAlign = true;
-
-            if (!OriginalPosRot.ContainsKey(BaseToAlign.id)) OriginalPosRot.Add(BaseToAlign.id, BaseToAlign);
-
-            var AlignResult = BaseToAlign = OriginalPosRot[BaseToAlign.id];
-            
-            if (CurrentAlignData.MainBaseId != 0)
-            {
-                Log($"**HandleEmpyrionBaseAlign:ExecAlign {MainBase.id} pos= {MainBase.pos.x},{MainBase.pos.y},{MainBase.pos.z} rot= {MainBase.rot.x},{MainBase.rot.y},{MainBase.rot.z} Align: {BaseToAlign.id} pos= {BaseToAlign.pos.x},{BaseToAlign.pos.y},{BaseToAlign.pos.z} rot= {BaseToAlign.rot.x},{BaseToAlign.rot.y},{BaseToAlign.rot.z} Shift={CurrentAlignData.ShiftVector.X},{CurrentAlignData.ShiftVector.Y},{CurrentAlignData.ShiftVector.Z}  Rotate={CurrentAlignData.RotateVector.X},{CurrentAlignData.RotateVector.Y},{CurrentAlignData.RotateVector.Z}", LogLevel.Message);
-
-                PlayerLastAlignData[CurrentAlignData.PlayerId] = CurrentAlignData;
-
-                AlignResult = ExecAlign(MainBase, BaseToAlign, CurrentAlignData.ShiftVector, CurrentAlignData.RotateVector);
-            }
-
-            Log($"**HandleEmpyrionBaseAlign:Align {(CurrentAlignData.MainBaseId == 0 ? "UNDO" : "")} setposition {BaseToAlign.id} {BaseToAlign.pos.x},{BaseToAlign.pos.y},{BaseToAlign.pos.z} setrotation {BaseToAlign.id} {BaseToAlign.rot.x},{BaseToAlign.rot.y},{BaseToAlign.rot.z} -> \n" +
-                     $"setposition {BaseToAlign.id} {AlignResult.pos.x},{AlignResult.pos.y},{AlignResult.pos.z} setrotation {BaseToAlign.id} {AlignResult.rot.x},{AlignResult.rot.y},{AlignResult.rot.z}", LogLevel.Message);
-            GameAPI.Game_Request(CmdId.Request_Entity_Teleport, 1, AlignResult);
-            WithinAlign = false;
-        }
-
         enum ChatType
         {
             Global  = 3,
@@ -137,6 +111,7 @@ namespace EmpyrionBaseAlign
             if (info.type != (byte)ChatType.Faction) return;
 
             if(!PlayerLastAlignData.TryGetValue(info.playerId, out CurrentAlignData)) PlayerLastAlignData.Add(info.playerId, CurrentAlignData = new LastAlignData() { PlayerId = info.playerId });
+            var P = await Request_Player_Info(info.playerId.ToId());
 
             switch (aSubCommand)
             {
@@ -145,52 +120,102 @@ namespace EmpyrionBaseAlign
                                         CurrentAlignData.MainBaseId    = getIntParam(args, "MainBaseId", -1);
                                         CurrentAlignData.ShiftVector   = Vector3.Zero;
                                         CurrentAlignData.RotateVector  = Vector3.Zero;
-                                        if(CurrentAlignData.MainBaseId == -1) CurrentAlignData.MainBaseId = CurrentAlignData.BaseToAlignId;
+
+                                        CurrentAlignData.BaseToAlignPosAndRot     = await Request_Entity_PosAndRot(CurrentAlignData.BaseToAlignId.ToId());            
+                                        CurrentAlignData.BaseToAlignStructureInfo = await Request_GlobalStructure_Info(CurrentAlignData.BaseToAlignId.ToId());
+                                        if (!OriginalPosRot.ContainsKey(CurrentAlignData.BaseToAlignId)) OriginalPosRot.Add(CurrentAlignData.BaseToAlignId, CurrentAlignData.BaseToAlignPosAndRot);
+
+                                        if (CurrentAlignData.MainBaseId == -1)
+                                        {
+                                            CurrentAlignData.MainBaseId            = CurrentAlignData.BaseToAlignId;
+                                            CurrentAlignData.MainBaseStructureInfo = CurrentAlignData.BaseToAlignStructureInfo;
+                                            CurrentAlignData.MainBasePosAndRot     = CurrentAlignData.BaseToAlignPosAndRot;
+                                        }
+                                        else if (CurrentAlignData.MainBaseId != 0){ 
+                                            CurrentAlignData.MainBaseStructureInfo = await Request_GlobalStructure_Info(CurrentAlignData.MainBaseId.ToId());
+                                            CurrentAlignData.MainBasePosAndRot     = await Request_Entity_PosAndRot(CurrentAlignData.MainBaseId.ToId()); 
+                                        }
+
+                                        await CheckPlayerPermissionThenExecAlign(info, CurrentAlignData);
                                         break;
                 case SubCommand.Shift : CurrentAlignData.ShiftVector  += new Vector3(getIntParam(args, "ShiftX"), getIntParam(args, "ShiftY"), getIntParam(args, "ShiftZ"));
+                                        GetPosAndRotThenExecAlign(P, CurrentAlignData);
                                         break;
                 case SubCommand.Rotate: CurrentAlignData.RotateVector += new Vector3(getIntParam(args, "RotateX"), getIntParam(args, "RotateY"), getIntParam(args, "RotateZ"));
+                                        GetPosAndRotThenExecAlign(P, CurrentAlignData);
+                                        break;
+                case SubCommand.Undo:   if(CurrentAlignData.BaseToAlignStructureInfo.id == 0 || CurrentAlignData.MainBaseStructureInfo.id == 0) return;
+
+                                        CurrentAlignData.ShiftVector  = Vector3.Zero;
+                                        CurrentAlignData.RotateVector = Vector3.Zero;
+
+                                        await Request_Entity_Teleport(OriginalPosRot[CurrentAlignData.BaseToAlignId]);
                                         break;
             }
 
-            MainBase = BaseToAlign = null;
-            WithinAlign = false;
-
-            await CheckPlayerPermissionThenExecAlign(info);
         }
 
-        private async Task CheckPlayerPermissionThenExecAlign(ChatInfo info)
+        private async Task CheckPlayerPermissionThenExecAlign(ChatInfo info, LastAlignData currentAlignData)
         {
-            var G = await Request_GlobalStructure_List();
-            var I = await Request_Player_Info(info.playerId.ToId());
+            var P = await Request_Player_Info(info.playerId.ToId());
 
-            var playerPermissionLevel = (PermissionType)I.permission;
+            if(currentAlignData.BaseToAlignStructureInfo.id == 0)
+            {
+                InformPlayer(info.playerId, $"BaseAlign: Structure {currentAlignData.BaseToAlignId} not exists.");
+                return;
+            }
 
-            if (playerPermissionLevel >= Configuration.Current.FreePermissionLevel) GetPosAndRotThenExecAlign();
-            else if(Configuration.Current.ForbiddenPlayfields.Contains(I.playfield)) InformPlayer(info.playerId, $"BaseAlign: Playfield ist verboten");
+            if (currentAlignData.MainBaseStructureInfo.id == 0)
+            {
+                InformPlayer(info.playerId, $"BaseAlign: Structure {currentAlignData.MainBaseId} not exists.");
+                return;
+            }
+
+            var playerPermissionLevel = (PermissionType)P.permission;
+
+            if (playerPermissionLevel >= Configuration.Current.FreePermissionLevel) return;
+            else if (Configuration.Current.ForbiddenPlayfields.Contains(P.playfield))
+            {
+                currentAlignData.BaseToAlignStructureInfo = currentAlignData.MainBaseStructureInfo = new GlobalStructureInfo();
+                InformPlayer(info.playerId, $"BaseAlign: Playfield ist verboten");
+            }
             else
             {
-                var StructureInfoA = SearchEntity(G, CurrentAlignData.BaseToAlignId);
-                var StructureInfoB = SearchEntity(G, CurrentAlignData.MainBaseId);
-                if (StructureInfoA.factionId == I.factionId && StructureInfoB.factionId == I.factionId) GetPosAndRotThenExecAlign();
-                else InformPlayer(info.playerId, $"BaseAlign: Basen stehen nicht beide auf der Fraktion des Spielers");
+                if (currentAlignData.BaseToAlignStructureInfo.factionId == P.factionId && currentAlignData.MainBaseStructureInfo.factionId == P.factionId) return;
+                else
+                {
+                    currentAlignData.BaseToAlignStructureInfo = currentAlignData.MainBaseStructureInfo = new GlobalStructureInfo();
+                    InformPlayer(info.playerId, $"BaseAlign: Basen stehen nicht beide auf der Fraktion des Spielers");
+                }
             }
         }
 
-        public static GlobalStructureInfo SearchEntity(GlobalStructureList aGlobalStructureList, int aSourceId)
+        private async void GetPosAndRotThenExecAlign(PlayerInfo player, LastAlignData currentAlignData)
         {
-            foreach (var TestPlayfieldEntites in aGlobalStructureList.globalStructures)
-            {
-                var FoundEntity = TestPlayfieldEntites.Value.FirstOrDefault(E => E.id == aSourceId);
-                if (FoundEntity.id != 0) return FoundEntity;
-            }
-            return new GlobalStructureInfo();
-        }
+            if(currentAlignData.BaseToAlignStructureInfo.id == 0 || currentAlignData.MainBaseStructureInfo.id == 0) return;
 
-        private void GetPosAndRotThenExecAlign()
-        {
-            GetEntity_PosAndRot(CurrentAlignData.BaseToAlignId);
-            if(CurrentAlignData.MainBaseId != 0) GetEntity_PosAndRot(CurrentAlignData.MainBaseId);
+            var BaseToAlign = OriginalPosRot[currentAlignData.BaseToAlignId];
+
+            Log($"**HandleEmpyrionBaseAlign:ExecAlign {CurrentAlignData.MainBasePosAndRot.id} pos= {CurrentAlignData.MainBasePosAndRot.pos.x},{CurrentAlignData.MainBasePosAndRot.pos.y},{CurrentAlignData.MainBasePosAndRot.pos.z} rot= {CurrentAlignData.MainBasePosAndRot.rot.x},{CurrentAlignData.MainBasePosAndRot.rot.y},{CurrentAlignData.MainBasePosAndRot.rot.z} Align: {BaseToAlign.id} pos= {BaseToAlign.pos.x},{BaseToAlign.pos.y},{BaseToAlign.pos.z} rot= {BaseToAlign.rot.x},{BaseToAlign.rot.y},{BaseToAlign.rot.z} Shift={CurrentAlignData.ShiftVector.X},{CurrentAlignData.ShiftVector.Y},{CurrentAlignData.ShiftVector.Z}  Rotate={CurrentAlignData.RotateVector.X},{CurrentAlignData.RotateVector.Y},{CurrentAlignData.RotateVector.Z}", LogLevel.Message);
+
+            PlayerLastAlignData[CurrentAlignData.PlayerId] = CurrentAlignData;
+
+            var AlignResult = ExecAlign(CurrentAlignData.MainBasePosAndRot, BaseToAlign, CurrentAlignData.ShiftVector, CurrentAlignData.RotateVector);
+
+            var answer = await ShowDialog(player.entityId, player, "Change Pos/Rotation", $"Change structure '[c][00ff00]{CurrentAlignData.BaseToAlignStructureInfo.name}[-][/c] ({CurrentAlignData.BaseToAlignStructureInfo.id})'\n" +
+                $"pos X:{BaseToAlign.pos.x} -> {AlignResult.pos.x}\n" +
+                $"pos Y:{BaseToAlign.pos.y} -> {AlignResult.pos.y}\n" +
+                $"pos Z:{BaseToAlign.pos.z} -> {AlignResult.pos.z}\n" +
+                $"rot X:{BaseToAlign.rot.x} -> {AlignResult.rot.x}\n" +
+                $"rot Y:{BaseToAlign.rot.y} -> {AlignResult.rot.y}\n" +
+                $"rot Z:{BaseToAlign.rot.z} -> {AlignResult.rot.z}\n",
+                "Yes", "No");
+            if (answer.Id != player.entityId || answer.Value != 0) return;
+
+            Log($"**HandleEmpyrionBaseAlign:Align setposition {BaseToAlign.id} {BaseToAlign.pos.x},{BaseToAlign.pos.y},{BaseToAlign.pos.z} setrotation {BaseToAlign.id} {BaseToAlign.rot.x},{BaseToAlign.rot.y},{BaseToAlign.rot.z} -> \n" +
+                     $"setposition {BaseToAlign.id} {AlignResult.pos.x},{AlignResult.pos.y},{AlignResult.pos.z} setrotation {BaseToAlign.id} {AlignResult.rot.x},{AlignResult.rot.y},{AlignResult.rot.z}", LogLevel.Message);
+
+            await Request_Entity_Teleport(AlignResult);
         }
 
         private int getIntParam(Dictionary<string, string> aArgs, string aParameterName, int defaultIfNotFound = 0)

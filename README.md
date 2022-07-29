@@ -22,16 +22,13 @@ Damit werden viele Exploids vermieden die sich sonst ergeben würden. Spieler mi
 
 * \al {BaseToAlignId} {MainBaseId}
 * \al {BaseToAlignId} 
-* \al {BaseToAlignId} 0
+
+* \al undo => Die Basis {BaseToAlignId} wieder an die ursprüngliche Position und Ausrichtung zurückgesetzen.
 
 * \als {ShiftX} {ShiftY} {ShiftZ}		=> Letzte \al Basis um X Y Z verschieben
 * \alr {RotateX} {RotateY} {RotateZ}    => Letzte \al Basis um X Y Z drehen
 
 Richtet die Basis (BaseToAlignId) so aus und positioniert sie das sie im Rastermaß einer bestehenden Basis (MainBaseId) liegt und beim Bauen nahtlos an diese anschließt.
-
-UNDO: Wenn die {MainBaseId} = 0 ist wird die Basis {BaseToAlignId} wieder an die ursprüngliche Position und Ausrichtung zurückgesetzt werden.
-
-Tipp: mit "/al ID ID" kann man auch eine einzelne Basis noch mal verschieben und drehen ;-)
 
 ### Restore?
 Im Logfile werden die 'setposition' und 'setrotation' Kommandos hinterlegt die zur Restaurierung der 'alten' Position und Ausrichtung genutzt werden können
